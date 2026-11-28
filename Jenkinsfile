@@ -28,7 +28,6 @@ pipeline {
                     docker run -d \
                         --name abode-test \
                         --network abode-ci \
-                        -p 18080:80 \
                         abode-webapp:${BUILD_NUMBER}
 
                     trap 'docker rm -f abode-test 2>/dev/null || true' EXIT
