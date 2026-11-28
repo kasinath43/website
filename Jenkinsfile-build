@@ -1,0 +1,34 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Build Docker Image') {
+            steps {
+                echo "Building image for branch: ${BRANCH_NAME}"
+                sh '''
+                    docker build -t abode-webapp:${BRANCH_NAME}-${BUILD_NUMBER} .
+                '''
+            }
+        }
+
+        stage('Trigger Test Job') {
+            steps {
+                build job: 'Abode-Test',
+                    parameters: [
+                        string(name: 'BRANCH_NAME', value: "${BRANCH_NAME}"),
+                        string(name: 'IMAGE_TAG', value: "abode-webapp:${BRANCH_NAME}-${BUILD_NUMBER}")
+                    ],
+                    wait: false
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Build successful and Test job triggered!'
+        }
+        failure {
+            echo 'Build or Test job trigger failed!'
+        }
+    }
+}
