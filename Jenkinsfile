@@ -40,9 +40,7 @@ pipeline {
         }
 
         stage('Production') {
-            when {
-                branch 'master'
-            }
+         
 
             steps {
                 echo 'Deploying Abode Software to production'
