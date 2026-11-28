@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: intellipaat-website
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: intellipaat-website
+  template:
+    metadata:
+      labels:
+        app: intellipaat-website
+    spec:
+      containers:
+        - name: website
+          image: kasinath46/intellipaat-website:v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
