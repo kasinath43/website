@@ -50,7 +50,7 @@ pipeline {
 
                     docker run -d \
                         --name abode-webapp-container \
-                        -p 8080:80 \
+                        -p 8082:80 \
                         abode-webapp:${BUILD_NUMBER}
                 '''
             }
