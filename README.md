@@ -1,0 +1,1 @@
+Automatic Jenkins polling test
