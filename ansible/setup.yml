@@ -1,0 +1,29 @@
+---
+- name: Configure website server
+  hosts: localhost
+  connection: local
+  become: true
+
+  tasks:
+    - name: Install Apache web server
+      apt:
+        name: apache2
+        state: present
+        update_cache: yes
+
+    - name: Ensure Apache is running
+      service:
+        name: apache2
+        state: started
+        enabled: yes
+
+    - name: Create website homepage
+      copy:
+        dest: /var/www/html/index.html
+        content: |
+          <html>
+          <head><title>Intellipaat DevOps</title></head>
+          <body>
+          <h1>Configured using Ansible!</h1>
+          </body>
+          </html>
