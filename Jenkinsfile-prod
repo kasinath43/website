@@ -8,6 +8,15 @@ pipeline {
             steps {
                 echo 'Building production image'
 
+pipeline {
+    agent any
+
+    stages {
+
+        stage('Build') {
+            steps {
+                echo 'Building Abode Software production image'
+
                 sh '''
                     docker build -t abode-webapp-prod:${BUILD_NUMBER} .
                 '''
@@ -33,37 +42,35 @@ pipeline {
                     trap 'docker rm -f abode-prod-test 2>/dev/null || true' EXIT
 
                     sleep 5
-                    docker exec jenkins curl -f http://abode-prod-test
+
+                    docker exec jenkins curl -fsS http://abode-prod-test
+
+                    echo "Production image test passed!"
                 '''
             }
         }
 
         stage('Production Deployment') {
             steps {
-                echo 'Deploying to production'
+                echo 'Deploying Abode Software to production'
 
                 sh '''
+                    docker network inspect abode-ci >/dev/null 2>&1 || docker network create abode-ci
+
                     docker rm -f abode-webapp-container 2>/dev/null || true
 
                     docker run -d \
                         --name abode-webapp-container \
+                        --network abode-ci \
                         --restart unless-stopped \
                         -p 8080:80 \
                         abode-webapp-prod:${BUILD_NUMBER}
 
-                    for i in $(seq 1 15); do
-    if curl -fsS http://localhost:8080; then
-        echo "Production website is healthy!"
-        exit 0
-    fi
+                    sleep 5
 
-    echo "Waiting for production website... attempt $i"
-    sleep 2
-done
+                    docker exec jenkins curl -fsS http://abode-webapp-container
 
-echo "Production health check failed!"
-exit 1
-             
+                    echo "Production website is healthy!"
                 '''
             }
         }
@@ -75,8 +82,7 @@ exit 1
         }
 
         failure {
-            echo 'Production deployment failed!'
+            echo 'Production deployment failed! Check Console Output.'
         }
     }
 }
-
