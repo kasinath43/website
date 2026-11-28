@@ -1,0 +1,71 @@
+
+pipeline {
+    agent any
+
+    stages {
+
+        stage('Build') {
+            steps {
+                echo 'Building production image'
+
+                sh '''
+                    docker build -t abode-webapp-prod:${BUILD_NUMBER} .
+                '''
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo 'Testing production image'
+
+                sh '''
+                    docker network inspect abode-ci >/dev/null 2>&1 || docker network create abode-ci
+
+                    docker network connect abode-ci jenkins 2>/dev/null || true
+
+                    docker rm -f abode-prod-test 2>/dev/null || true
+
+                    docker run -d \
+                        --name abode-prod-test \
+                        --network abode-ci \
+                        abode-webapp-prod:${BUILD_NUMBER}
+
+                    trap 'docker rm -f abode-prod-test 2>/dev/null || true' EXIT
+
+                    sleep 5
+                    docker exec jenkins curl -f http://abode-prod-test
+                '''
+            }
+        }
+
+        stage('Production Deployment') {
+            steps {
+                echo 'Deploying to production'
+
+                sh '''
+                    docker rm -f abode-webapp-container 2>/dev/null || true
+
+                    docker run -d \
+                        --name abode-webapp-container \
+                        --restart unless-stopped \
+                        -p 8080:80 \
+                        abode-webapp-prod:${BUILD_NUMBER}
+
+                    sleep 5
+                    curl -f http://localhost:8080
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Production deployment successful!'
+        }
+
+        failure {
+            echo 'Production deployment failed!'
+        }
+    }
+}
+
