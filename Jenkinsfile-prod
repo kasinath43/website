@@ -51,8 +51,19 @@ pipeline {
                         -p 8080:80 \
                         abode-webapp-prod:${BUILD_NUMBER}
 
-                    sleep 5
-                    curl -f http://localhost:8080
+                    for i in $(seq 1 15); do
+    if curl -fsS http://localhost:8080; then
+        echo "Production website is healthy!"
+        exit 0
+    fi
+
+    echo "Waiting for production website... attempt $i"
+    sleep 2
+done
+
+echo "Production health check failed!"
+exit 1
+             
                 '''
             }
         }
